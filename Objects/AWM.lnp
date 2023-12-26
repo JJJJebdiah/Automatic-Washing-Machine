@@ -1,0 +1,13 @@
+".\Objects\main.obj",
+".\Objects\AWM.obj",
+".\Objects\digital_tube.obj",
+".\Objects\key.obj",
+".\Objects\lcd1602.obj",
+".\Objects\public.obj",
+".\Objects\serial.obj",
+".\Objects\stepper.obj",
+".\Objects\buzzer.obj",
+".\Objects\ired.obj" 
+TO ".\Objects\AWM" 
+PRINT(".\Listings\AWM.m51") RAMSIZE(256) 
+DISABLEWARNING (16) 
