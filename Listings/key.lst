@@ -1,0 +1,294 @@
+C51 COMPILER V9.60.7.0   KEY                                                               06/26/2023 12:59:44 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\key.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE key.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\key.l
+                    -st) OBJECT(.\Objects\key.obj)
+
+line level    source
+
+   1          #include "key.h"
+   2          
+   3          #define KEY_MATRIX_PORT P1
+   4          
+   5          sbit row1=KEY_MATRIX_PORT^7;
+   6          sbit row2=KEY_MATRIX_PORT^6;
+   7          sbit row3=KEY_MATRIX_PORT^5;
+   8          sbit row4=KEY_MATRIX_PORT^4;
+   9          sbit col1=KEY_MATRIX_PORT^3;
+  10          sbit col2=KEY_MATRIX_PORT^2;
+  11          sbit col3=KEY_MATRIX_PORT^1;
+  12          sbit col4=KEY_MATRIX_PORT^0;
+  13          
+  14          //sbit key[4]={P3^1,P3^0,P3^2,P3^3};
+  15          //key[0]=P3^1;
+  16          //key[1]=P3^0;
+  17          //key[2]=P3^2;
+  18          //key[3]=P3^3;
+  19          /*
+  20          sbit key1=P3^1;
+  21          sbit key2=P3^0;
+  22          sbit key3=P3^2;
+  23          sbit key4=P3^3;
+  24          */
+  25          u8 key_matrix_state=0;
+  26          
+  27          u8 key_independent_scan_rising()
+  28          {
+  29   1              /*
+  30   1              上升沿，即按键松开瞬间
+  31   1              此函数需要在定时器中断中调用，间隔时间为10ms
+  32   1          return:NONE_PRESS-未被按下，KEY1_PRESS,KEY2_PRESS,KEY3_PRESS,KEY4_PRESS为按下的按键
+  33   1              */
+  34   1              
+  35   1      //      static u8 key_state=0;
+  36   1      //      u8 i;
+  37   1      //      if(key_state==0)//上个时刻无按键被按下
+  38   1      //      {
+  39   1      //              for(i=0;i<4;i++)
+  40   1      //              {
+  41   1      //                      if(key[i]==0)
+  42   1      //                      {
+  43   1      //                              key_state=i+1;
+  44   1      //                              return NONE_PRESS;
+  45   1      //                      }
+  46   1      //              }
+  47   1                      return NONE_PRESS;
+  48   1                      /*
+  49   1                      if(key1==0)//key1被按下
+  50   1                      {
+  51   1                              key_state=1;
+  52   1                              return NONE_PRESS;
+  53   1                      }
+  54   1                      if(key2==0)
+C51 COMPILER V9.60.7.0   KEY                                                               06/26/2023 12:59:44 PAGE 2   
+
+  55   1                      {
+  56   1                              key_state=2;
+  57   1                              return NONE_PRESS;
+  58   1                      }
+  59   1                      if(key3==0)
+  60   1                      {
+  61   1                              key_state=3;
+  62   1                              return NONE_PRESS;
+  63   1                      }
+  64   1                      if(key4==0)
+  65   1                      {
+  66   1                              key_state=4;
+  67   1                              return NONE_PRESS;
+  68   1                      }
+  69   1                      return NONE_PRESS;*/
+  70   1      //      }
+  71   1              //上个时刻有按键被按下
+  72   1      //      if(key[key_state-1]==0)//按键仍被按下
+  73   1      //      {
+  74   1      //              return NONE_PRESS;
+  75   1      //      }
+  76   1      //      //按键被松开
+  77   1      //      key_state=0;
+  78   1      //      return key_state;
+  79   1              /*switch(key_state)
+  80   1              {
+  81   1                      case 1:
+  82   1                              if(key1==1)
+  83   1                              {
+  84   1                                      key_state=0;
+  85   1                                      return KEY1_PRESS;
+  86   1                              }
+  87   1                              break;
+  88   1                      case 2:
+  89   1                              if(key2==1)
+  90   1                              {
+  91   1                                      key_state=0;
+  92   1                                      return KEY2_PRESS;
+  93   1                              }
+  94   1                              break;
+  95   1                      case 3:
+  96   1                              if(key3==1)
+  97   1                              {
+  98   1                                      key_state=0;
+  99   1                                      return KEY3_PRESS;
+ 100   1                              }
+ 101   1                              break;
+ 102   1                      case 4:
+ 103   1                              if(key4==1)
+ 104   1                              {
+ 105   1                                      key_state=0;
+ 106   1                                      return KEY4_PRESS;
+ 107   1                              }
+ 108   1                              break;
+ 109   1              }
+ 110   1              return 0;//按键未松开*/
+ 111   1      
+ 112   1      
+ 113   1      }
+ 114          
+ 115          //u8 key_independent_scan_falling()
+ 116          //{
+C51 COMPILER V9.60.7.0   KEY                                                               06/26/2023 12:59:44 PAGE 3   
+
+ 117          //      /*
+ 118          //      下降沿，即按键按下瞬间
+ 119          //      此函数需要在定时器中断中调用，间隔时间为10ms
+ 120          //    return:NONE_PRESS-未被按下，KEY1_PRESS,KEY2_PRESS,KEY3_PRESS,KEY4_PRESS为按下的按键
+ 121          //      */
+ 122          //      static u8 key_state=0;
+ 123          //      if(key_state==0)//上个时刻无按键被按下
+ 124          //      {
+ 125          //              if(key1==0)//key1被按下
+ 126          //              {
+ 127          //                      delay_ms_11M(1);//消抖
+ 128          //                      if(key1==0)//确实被按下
+ 129          //                      {
+ 130          //                              key_state=1;
+ 131          //                              return KEY1_PRESS;
+ 132          //                      }
+ 133          //              }
+ 134          //              if(key2==0)
+ 135          //              {
+ 136          //                      delay_ms_11M(1);//消抖
+ 137          //                      if(key2==0)
+ 138          //                      {
+ 139          //                              key_state=2;
+ 140          //                              return KEY2_PRESS;
+ 141          //                      }
+ 142          //              }
+ 143          //              if(key3==0)
+ 144          //              {
+ 145          //                      delay_ms_11M(1);//消抖
+ 146          //                      if(key3==0)
+ 147          //                      {
+ 148          //                              key_state=3;
+ 149          //                              return KEY3_PRESS;
+ 150          //                      }
+ 151          //              }
+ 152          //              if(key4==0)
+ 153          //              {
+ 154          //                      delay_ms_11M(1);//消抖
+ 155          //                      if(key4==0)
+ 156          //                      {
+ 157          //                              key_state=4;
+ 158          //                              return KEY4_PRESS;
+ 159          //                      }
+ 160          //              }
+ 161          //              return NONE_PRESS;
+ 162          //      }
+ 163          //      //上个时刻有按键被按下
+ 164          //      return NONE_PRESS;
+ 165          //}
+ 166          
+ 167          u8 key_column_scan()
+ 168          {
+ 169   1              /*
+ 170   1              按键矩阵列扫描
+ 171   1              return:0-未被按下
+ 172   1              */
+ 173   1              if(col1==0)
+ 174   1              {
+ 175   2                      return 1;
+ 176   2              }
+ 177   1              if(col2==0)
+ 178   1              {
+C51 COMPILER V9.60.7.0   KEY                                                               06/26/2023 12:59:44 PAGE 4   
+
+ 179   2                      return 2;
+ 180   2              }
+ 181   1              if(col3==0)
+ 182   1              {
+ 183   2                      return 3;
+ 184   2              }
+ 185   1              if(col4==0)
+ 186   1              {
+ 187   2                      return 4;
+ 188   2              }
+ 189   1              return 0;
+ 190   1      }
+ 191          
+ 192          u8 key_row_scan(u8 row)
+ 193          {
+ 194   1              u8 i=1,x;
+ 195   1              if(key_matrix_state==0)
+ 196   1              //上个时刻无按键被按下
+ 197   1              {
+ 198   2                      x=key_column_scan();
+ 199   2                      if(x==0)
+ 200   2                      {
+ 201   3                              //无按键被按下
+ 202   3                              return NONE_PRESS;
+ 203   3                      }
+ 204   2                      key_matrix_state=x+4*row-4;
+ 205   2                      return NONE_PRESS;
+ 206   2              }
+ 207   1              for(;i<5;i++)
+ 208   1              {
+ 209   2                      if(key_matrix_state==i+4*row-4)
+ 210   2                      {
+ 211   3                              if(key_column_scan()==i)
+ 212   3                              {
+ 213   4                                      //S(i+4*row-4)仍被按下
+ 214   4                                      return NONE_PRESS;
+ 215   4                              }
+ 216   3                              else
+ 217   3                              {
+ 218   4                                      //S(i+4*row-4)被松开
+ 219   4                                      key_matrix_state=0;
+ 220   4                                      return i+4*row-4;
+ 221   4                              }
+ 222   3                      }
+ 223   2              }
+ 224   1              return NONE_PRESS;
+ 225   1      }
+ 226          
+ 227          u8 key_matrix_scan_rising()
+ 228          {
+ 229   1              /*
+ 230   1              上升沿，即按键松开瞬间
+ 231   1              此函数需要在定时器中断中调用，间隔时间为10ms
+ 232   1          return:NONE_PRESS-未被按下 1-16为按下的按键
+ 233   1              */
+ 234   1              u8 re;
+ 235   1              KEY_MATRIX_PORT=0x7f;//第一行低电平，其他行高电平
+ 236   1              re=key_row_scan(1);//扫描第一行
+ 237   1              if(re!=NONE_PRESS)
+ 238   1              {
+ 239   2                      return re;//返回按键号
+ 240   2              }
+C51 COMPILER V9.60.7.0   KEY                                                               06/26/2023 12:59:44 PAGE 5   
+
+ 241   1              KEY_MATRIX_PORT=0xbf;//第二行低电平，其他行高电平
+ 242   1              re=key_row_scan(2);
+ 243   1              if(re!=NONE_PRESS)
+ 244   1              {
+ 245   2                      return re;
+ 246   2              }
+ 247   1              /*KEY_MATRIX_PORT=0xdf;//第三行低电平，其他行高电平
+ 248   1              re=key_row_scan(3);
+ 249   1              if(re!=NONE_PRESS)
+ 250   1              {
+ 251   1                      return re;
+ 252   1              }
+ 253   1              KEY_MATRIX_PORT=0xef;//第四行低电平，其他行高电平
+ 254   1              re=key_row_scan(4);
+ 255   1              if(re!=NONE_PRESS)
+ 256   1              {
+ 257   1                      return re;
+ 258   1              }*/
+ 259   1              return NONE_PRESS;
+ 260   1      
+ 261   1      }
+ 262          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    133    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

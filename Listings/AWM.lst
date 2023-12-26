@@ -1,0 +1,498 @@
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE AWM
+OBJECT MODULE PLACED IN .\Objects\AWM.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE AWM.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\AWM.l
+                    -st) OBJECT(.\Objects\AWM.obj)
+
+line level    source
+
+   1          #include "AWM.h"
+   2          
+   3          #define LOW_WATER 1
+   4          #define HIGH_WATER 2
+   5          
+   6          //状态变量
+   7          u16 time = 60; //洗衣机运行时间
+   8          bit mode=0; //洗衣机模式，0表示标准模式，1表示轻柔模式
+   9          bit start=0; //洗衣机启动状态，0表示停止，1表示正在运行
+  10          bit flag=0;//中断时存储start状态
+  11          u8 speed[2]={8,20};//步进机转速，表示间隔多少100us步进一次
+  12          u8 direct=0;//0-9记录转动秒数，小于5时顺时针
+  13          u8 water=0;//水位信号，0表示正常，LOW_WATER表示低水位，HIGH_WATER表示高水位
+  14          u8 is_water=0;//是否放/加水，0表示不放/加水，1表示放/加水
+  15          
+  16          //变量
+  17          u16 count = 0,run=0,water_time=0;//run表示洗衣机运行时间,count表示程序运行时间,water_time
+             -表示放/加水时间
+  18          u8 ired_cmd;//红外数据控制码
+  19          u8 dfs;
+  20          /*
+  21          struct data_from_SBUF
+  22          {
+  23              u8 d[10];
+  24              u8 len;
+  25          } dfs;*/
+  26          
+  27          
+  28          void display()
+  29          {
+  30   1          lcd1602_write_string(0,0,"mode:  start:   time:   s");
+  31   1          lcd1602_write_int(5,0,mode,1);
+  32   1          lcd1602_write_int(13,0,start,1);
+  33   1          lcd1602_write_int(21,0,time,3);
+  34   1      }
+  35          void send_data()
+  36          {
+  37   1          display();
+  38   1          serial_send_string("mode: ");
+  39   1          serial_send_int(mode,1);
+  40   1          serial_send_string(" start: ");
+  41   1          serial_send_int(start,1);
+  42   1          serial_send_string(" time: ");
+  43   1          serial_send_int(time,3);
+  44   1          serial_send_string(" s\r\n");
+  45   1      }
+  46          /*void clear_dfs()
+  47          {
+  48              u8 i;
+  49              for(i=0;i<dfs.len;i++)
+  50              {
+  51                  dfs.d[i]=0;
+  52              }
+  53              dfs.len=0;
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 2   
+
+  54          }*/
+  55          void AWM_init()
+  56          {
+  57   1          lcd1602_init();//初始化lcd1602
+  58   1          init_timer0_5ms();//初始化定时器0
+  59   1          serial_init_9600(1);//初始化串口
+  60   1          ired_init();//初始化红外接收器
+  61   1          //clear_dfs();
+  62   1      
+  63   1      }
+  64          /*
+  65          void do_dfs()
+  66          {
+  67              if(dfs.len==7)//$mode=0;
+  68              {
+  69                  if(dfs.d[1]=='m'&&dfs.d[2]=='o'&&dfs.d[3]=='d'&&dfs.d[4]=='e'&&dfs.d[5]=='='&&dfs.d[6]=='0')
+  70                  {
+  71                      mode=0;
+  72                      send_data();
+  73                      return;
+  74                  }
+  75                  else if(dfs.d[1]=='m'&&dfs.d[2]=='o'&&dfs.d[3]=='d'&&dfs.d[4]=='e'&&dfs.d[5]=='='&&dfs.d[6]=='1')
+  76                  {
+  77                      mode=1;
+  78                      send_data();
+  79                      return;
+  80                  }
+  81                  else
+  82                  {
+  83                      return;
+  84                  }
+  85              }
+  86              if(dfs.len==8)//$start=0;
+  87              {
+  88                  if(dfs.d[1]=='s'&&dfs.d[2]=='t'&&dfs.d[3]=='a'&&dfs.d[4]=='r'&&dfs.d[5]=='t'&&dfs.d[6]=='='&&dfs.d
+             -[7]=='0')
+  89                  {
+  90                      start=0;
+  91                      flag=0;
+  92                      send_data();
+  93                      return;
+  94                  }
+  95                  else if(dfs.d[1]=='s'&&dfs.d[2]=='t'&&dfs.d[3]=='a'&&dfs.d[4]=='r'&&dfs.d[5]=='t'&&dfs.d[6]=='='&&
+             -dfs.d[7]=='1')
+  96                  {
+  97                      start=1;
+  98                      flag=1;
+  99                      send_data();
+ 100                      return;
+ 101                  }
+ 102                  else
+ 103                  {
+ 104                      return;
+ 105                  }
+ 106              }
+ 107              if(dfs.len==4)//$add;  $sub;
+ 108              {
+ 109                  if(dfs.d[1]=='a'&&dfs.d[2]=='d'&&dfs.d[3]=='d')
+ 110                  {
+ 111                      time+=15;
+ 112                      send_data();
+ 113                      return;
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 3   
+
+ 114                  }
+ 115                  else if(dfs.d[1]=='s'&&dfs.d[2]=='u'&&dfs.d[3]=='b')
+ 116                  {
+ 117                      if(time<15)
+ 118                      {
+ 119                          time=0;
+ 120                          start=0;
+ 121                          flag=0;
+ 122                      }
+ 123                      else
+ 124                      {
+ 125                          time-=15;
+ 126                      }
+ 127                      send_data();
+ 128                      return;
+ 129                  }
+ 130                  else
+ 131                  {
+ 132                      return;
+ 133                  }
+ 134              }
+ 135          }*/
+ 136          
+ 137          void change_start()
+ 138          {
+ 139   1          buzzer_play_11M(100,1000);
+ 140   1          if(start==1)
+ 141   1          {
+ 142   2              start=0;
+ 143   2              flag=0;
+ 144   2          }
+ 145   1          else
+ 146   1          {
+ 147   2              start=1;
+ 148   2              flag=1;
+ 149   2          }
+ 150   1          send_data();
+ 151   1      }
+ 152          
+ 153          void change_mode()
+ 154          {
+ 155   1          buzzer_play_11M(100,1000);
+ 156   1          if(mode==1)
+ 157   1          {
+ 158   2              //标准模式
+ 159   2              mode=0;
+ 160   2          }
+ 161   1          else
+ 162   1          {
+ 163   2              //轻柔模式
+ 164   2              mode=1;
+ 165   2          }
+ 166   1          send_data();
+ 167   1      }
+ 168          
+ 169          void add_time()
+ 170          {
+ 171   1          buzzer_play_11M(100,1000);
+ 172   1          time+=15;
+ 173   1          send_data();
+ 174   1      }
+ 175          
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 4   
+
+ 176          void sub_time()
+ 177          {
+ 178   1          buzzer_play_11M(100,1000);
+ 179   1          if(time<15)
+ 180   1          {
+ 181   2              time=0;
+ 182   2              start=0;
+ 183   2              flag=0;
+ 184   2          }
+ 185   1          else
+ 186   1          {
+ 187   2              time-=15;
+ 188   2          }
+ 189   1          send_data();
+ 190   1      }
+ 191          
+ 192          void check_dfs()
+ 193          {/*
+ 194   1          if(dfs.d[0]!='$'&&dfs.len==0)
+ 195   1          {
+ 196   1              dfs.d[0]=0;
+ 197   1              return;
+ 198   1          }
+ 199   1          if(dfs.d[dfs.len]==';')
+ 200   1          {
+ 201   1              do_dfs();
+ 202   1              clear_dfs();
+ 203   1              return;
+ 204   1          }
+ 205   1          dfs.len++;
+ 206   1          if(dfs.len>=10)
+ 207   1          {
+ 208   1              clear_dfs();
+ 209   1              return;
+ 210   1          }
+ 211   1          */
+ 212   1         if(dfs=='1')
+ 213   1         {
+ 214   2              change_start();
+ 215   2          }
+ 216   1          else if(dfs=='2')
+ 217   1          {
+ 218   2               change_mode();
+ 219   2          }
+ 220   1          else if(dfs=='3')
+ 221   1          {
+ 222   2               add_time();
+ 223   2          }
+ 224   1          else if(dfs=='4')
+ 225   1          {
+ 226   2              sub_time();
+ 227   2          }
+ 228   1      
+ 229   1      
+ 230   1      }
+ 231          void serial_interrupt() interrupt 4
+ 232          {
+ 233   1          if(RI==1)//只处理接收数据
+ 234   1          {
+ 235   2              RI=0;
+ 236   2              //dfs.d[dfs.len]=SBUF;
+ 237   2              dfs=SBUF;//获得数据
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 5   
+
+ 238   2              check_dfs();//处理数据
+ 239   2          }
+ 240   1      }
+ 241          
+ 242          void independent_keys()//独立按键扫描
+ 243          {
+ 244   1          u8 key=0;
+ 245   1          key=key_independent_scan_rising();
+ 246   1          switch(key)
+ 247   1          {
+ 248   2              case NONE_PRESS:
+ 249   2                  break;
+ 250   2              case KEY1_PRESS:
+ 251   2                  //启动/暂停按钮按下
+ 252   2                  change_start();
+ 253   2                  break;
+ 254   2      
+ 255   2          }
+ 256   1      
+ 257   1      }
+ 258          
+ 259          void matrix_keys()
+ 260          {
+ 261   1          u8 key=0;
+ 262   1          key=key_matrix_scan_rising();
+ 263   1          switch(key)
+ 264   1          {
+ 265   2              case NONE_PRESS:
+ 266   2                  return;
+ 267   2                  break;
+ 268   2              case 1:
+ 269   2                  //S1模式选择按钮按下
+ 270   2                  change_mode();
+ 271   2                  break;
+ 272   2              case 2:
+ 273   2                  //增时按钮按下
+ 274   2                  add_time();
+ 275   2                  break;
+ 276   2              case 3:
+ 277   2                  //减时按钮按下
+ 278   2                  sub_time();
+ 279   2                  break;
+ 280   2              case 4:
+ 281   2                  //控制模式切换按钮按下
+ 282   2                              lcd1602_clear();
+ 283   2                              lcd1602_write_string(0,0,"finished!");
+ 284   2                  break;
+ 285   2              case 5:
+ 286   2                  //低水位按钮按下
+ 287   2                  if(water==LOW_WATER) water=0;
+ 288   2                  else if(water==0)
+ 289   2                      water=LOW_WATER;
+ 290   2                  break;
+ 291   2              case 6:
+ 292   2                  //高水位按钮按下
+ 293   2                  if(water==HIGH_WATER) water=0;
+ 294   2                  else if(water==0)
+ 295   2                      water=HIGH_WATER;
+ 296   2                  break;
+ 297   2          }
+ 298   1      }
+ 299          
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 6   
+
+ 300          u8 water_interrupt()
+ 301          {
+ 302   1          start=0;//停止洗衣机
+ 303   1          if(count==200)
+ 304   1              water_time++;//每1s加1
+ 305   1          if(water_time==0)
+ 306   1          {
+ 307   2              lcd1602_clear();
+ 308   2              water_time=1;
+ 309   2              if(water==LOW_WATER)
+ 310   2              {
+ 311   3                  //加水
+ 312   3                  lcd1602_write_string(0,0,"adding water...");
+ 313   3              }
+ 314   2              else if(water==HIGH_WATER)
+ 315   2              {
+ 316   3                  //放水
+ 317   3                  lcd1602_write_string(0,0,"watering...");
+ 318   3              }
+ 319   2          }
+ 320   1          if(water_time%10==0)//10s后仍异常
+ 321   1          {
+ 322   2              lcd1602_clear();
+ 323   2              lcd1602_write_string(0,0,"water erro!");
+ 324   2              if(water==LOW_WATER)
+ 325   2              {
+ 326   3                  //放水
+ 327   3                  lcd1602_write_string(0,1,"low water!");
+ 328   3              }
+ 329   2              else if(water==HIGH_WATER)
+ 330   2              {
+ 331   3                  //加水
+ 332   3                  lcd1602_write_string(0,1,"high water!");
+ 333   3              }
+ 334   2              //开启蜂鸣器
+ 335   2              return 1;
+ 336   2          }
+ 337   1          return 0;
+ 338   1      }
+ 339          
+ 340          void ired()
+ 341          {
+ 342   1          /*处理红外数据*/
+ 343   1          if(ired_cmd==0x45)
+ 344   1          {
+ 345   2              //启动/暂停按钮按下
+ 346   2              change_start();
+ 347   2          }
+ 348   1          else if(ired_cmd==0x46)
+ 349   1          {
+ 350   2              //模式选择按钮按下
+ 351   2              change_mode();
+ 352   2          }
+ 353   1          else if(ired_cmd==0x15)
+ 354   1          {
+ 355   2              //减时按钮按下
+ 356   2              sub_time();
+ 357   2          }
+ 358   1          else if(ired_cmd==0x09)
+ 359   1          {
+ 360   2              //增时按钮按下
+ 361   2              add_time();
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 7   
+
+ 362   2          }
+ 363   1      
+ 364   1      }
+ 365          
+ 366          void timer0_interrupt() interrupt 1  //0表示外部中断0，1表示定时器0中断
+ 367          //2表示外部中断1，3表示定时器1中断，4表示串口中断
+ 368          {
+ 369   1          /*5ms*/
+ 370   1          static u8 re=0;//接收water_interrupt()的返回值
+ 371   1          count++;
+ 372   1          TH0 = 0xee; // 定时器0的高8位
+ 373   1          TL0 = 0x00; // 定时器0的低8位
+ 374   1          //每10ms扫描一次按键
+ 375   1          if(count%2==0)
+ 376   1          {
+ 377   2              if(water==0)//水位正常
+ 378   2                  independent_keys();//独立按键扫描
+ 379   2              //if(start==0)
+ 380   2                  matrix_keys();//矩阵按键扫描
+ 381   2          }
+ 382   1          if(water==0)
+ 383   1          {
+ 384   2              ired_cmd=ired_get_cmd();//获得红外数据控制码
+ 385   2              if(ired_cmd!=0)
+ 386   2              {
+ 387   3                  ired();//处理红外数据
+ 388   3              }
+ 389   2          }
+ 390   1          if(water==0 && is_water==1)
+ 391   1          {
+ 392   2              //水位正常，停止放/加水
+ 393   2              is_water=0;
+ 394   2              water_time=0;
+ 395   2              re=0;
+ 396   2              start=flag;//恢复洗衣机启动状态
+ 397   2              lcd1602_clear();
+ 398   2              send_data();
+ 399   2          }
+ 400   1          if(water!=0)
+ 401   1          {
+ 402   2              //水位异常，放/加水
+ 403   2              if(re!=1)
+ 404   2                  re=water_interrupt();
+ 405   2              else
+ 406   2                  buzzer_play_11M(4,1000);
+ 407   2              is_water=1;
+ 408   2          }
+ 409   1          if(count==200) count=0;
+ 410   1          if(start==1)
+ 411   1              run++;
+ 412   1          //每1s更新一次显示数据
+ 413   1          if(run == 200)
+ 414   1          {
+ 415   2              run = 0;
+ 416   2              direct++;
+ 417   2              if(direct==10)
+ 418   2                  direct=0;
+ 419   2                      if(time < 2)
+ 420   2              {
+ 421   3                  // 关闭洗衣机
+ 422   3                              start=0;
+ 423   3                  time=0;
+C51 COMPILER V9.60.7.0   AWM                                                               06/26/2023 12:59:44 PAGE 8   
+
+ 424   3                  flag=0;
+ 425   3                  send_data();
+ 426   3                  buzzer_play_11M(500,1000);
+ 427   3                              return;
+ 428   3      
+ 429   3              }
+ 430   2              time--;
+ 431   2              send_data();
+ 432   2          }
+ 433   1      }
+ 434          
+ 435          
+ 436          void stop_washing()
+ 437          {
+ 438   1          while(start!=1);
+ 439   1      }
+ 440          
+ 441          void start_washing()
+ 442          {
+ 443   1          while(start==1)
+ 444   1          {
+ 445   2                      if(start==0)//按下停止按钮
+ 446   2                              break;
+ 447   2              if(direct<5)
+ 448   2              {
+ 449   3                  stepper_motor(1);
+ 450   3              }
+ 451   2              else
+ 452   2                  stepper_motor(0);
+ 453   2              delay_100us_11M(speed[mode]);
+ 454   2              }
+ 455   1      }
+ 456          
+ 457          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    922    ----
+   CONSTANT SIZE    =    128    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     16    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      3    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,308 @@
+C51 COMPILER V9.60.7.0   DELAY                                                             06/01/2023 19:59:48 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN .\Objects\delay.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE delay.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\del
+                    -ay.lst) OBJECT(.\Objects\delay.obj)
+
+line level    source
+
+   1          #include <STC89C5xRC.H>
+   2          #include "delay.h"
+   3          
+   4          
+   5          sbit key1=P3^1;
+   6          sbit key2=P3^0;
+   7          sbit key3=P3^2;
+   8          sbit key4=P3^3;
+   9          void delay(u16 xms)
+  10          {
+  11   1              u16 i,j;
+  12   1              for(i=0;i<xms;i++)
+  13   1                      for(j=0;j<120;j++);
+  14   1      }
+  15          
+  16          void init_timer0()//5毫秒@11.0592MHz
+  17          {
+  18   1              TMOD &= 0xF0; // 清除定时器0的工作方式
+  19   1          TMOD = 0x01; // 选择定时器0工作在方式1
+  20   1          //TH0 = 0xf8;TL0 = 0xcd;//2ms
+  21   1              //TH0 = 0xdc;TL0 = 0x00;//10ms
+  22   1              //TH0 = 0x4c;TL0 = 0x00;//50ms
+  23   1              TH0 = 0xee;TL0 = 0x00;//5ms
+  24   1          EA = 1; // 开启总中断
+  25   1          ET0 = 1; // 开启定时器0中断
+  26   1          TR0 = 1; // 开启定时器0
+  27   1      }
+  28          
+  29          u8 key_scan_rising()
+  30          {
+  31   1              /*
+  32   1              上升沿，即按键松开瞬间
+  33   1              此函数需要在定时器中断中调用，间隔时间为10ms
+  34   1              */
+  35   1              static u8 key_state=0;
+  36   1              if(key_state==0)//上个时刻无按键被按下
+  37   1              {
+  38   2                      if(key1==0)//key1被按下
+  39   2                      {
+  40   3                              key_state=1;
+  41   3                              return 0;
+  42   3                      }
+  43   2                      if(key2==0)
+  44   2                      {
+  45   3                              key_state=2;
+  46   3                              return 0;
+  47   3                      }
+  48   2                      if(key3==0)
+  49   2                      {
+  50   3                              key_state=3;
+  51   3                              return 0;
+  52   3                      }
+  53   2                      if(key4==0)
+  54   2                      {
+C51 COMPILER V9.60.7.0   DELAY                                                             06/01/2023 19:59:48 PAGE 2   
+
+  55   3                              key_state=4;
+  56   3                              return 0;
+  57   3                      }
+  58   2                      return 0;
+  59   2              }
+  60   1              //上个时刻有按键被按下
+  61   1              switch(key_state)
+  62   1              {
+  63   2                      case 1:
+  64   2                              if(key1==1)
+  65   2                              {
+  66   3                                      key_state=0;
+  67   3                                      return 1;
+  68   3                              }
+  69   2                              break;
+  70   2                      case 2:
+  71   2                              if(key2==1)
+  72   2                              {
+  73   3                                      key_state=0;
+  74   3                                      return 2;
+  75   3                              }
+  76   2                              break;
+  77   2                      case 3:
+  78   2                              if(key3==1)
+  79   2                              {
+  80   3                                      key_state=0;
+  81   3                                      return 3;
+  82   3                              }
+  83   2                              break;
+  84   2                      case 4:
+  85   2                              if(key4==1)
+  86   2                              {
+  87   3                                      key_state=0;
+  88   3                                      return 4;
+  89   3                              }
+  90   2                              break;
+  91   2              }
+  92   1              return 0;//按键未松开
+  93   1      
+  94   1      
+  95   1      }
+  96          
+  97          u8 key_scan_falling()
+  98          {
+  99   1              /*
+ 100   1              下降沿，即按键按下瞬间
+ 101   1              此函数需要在定时器中断中调用，间隔时间为10ms
+ 102   1              */
+ 103   1              static u8 key_state=0;
+ 104   1              if(key_state==0)//上个时刻无按键被按下
+ 105   1              {
+ 106   2                      if(key1==0)//key1被按下
+ 107   2                      {
+ 108   3                              key_state=1;
+ 109   3                              return 1;
+ 110   3                      }
+ 111   2                      if(key2==0)
+ 112   2                      {
+ 113   3                              key_state=2;
+ 114   3                              return 2;
+ 115   3                      }
+ 116   2                      if(key3==0)
+C51 COMPILER V9.60.7.0   DELAY                                                             06/01/2023 19:59:48 PAGE 3   
+
+ 117   2                      {
+ 118   3                              key_state=3;
+ 119   3                              return 3;
+ 120   3                      }
+ 121   2                      if(key4==0)
+ 122   2                      {
+ 123   3                              key_state=4;
+ 124   3                              return 4;
+ 125   3                      }
+ 126   2                      return 0;
+ 127   2              }
+ 128   1              //上个时刻有按键被按下
+ 129   1              return 0;
+ 130   1      }
+ 131          
+ 132          //dinamic digital tube CC共阴
+ 133          unsigned char led[]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};//0-9
+ 134          void MPX8_CC(u8 location,u8 dat)
+ 135          {
+ 136   1              //138 Y0-Y7接8-1
+ 137   1              /**/
+ 138   1              if(dat>9)
+ 139   1                      return;
+ 140   1              P0=0x00;
+ 141   1              switch(location)
+ 142   1              {
+ 143   2                      case 7:
+ 144   2                              P24=0;P23=0;P22=0;
+ 145   2                              break;
+ 146   2                      case 6:
+ 147   2                              P24=0;P23=0;P22=1;
+ 148   2                              break;
+ 149   2                      case 5:
+ 150   2                              P24=0;P23=1;P22=0;
+ 151   2                              break;
+ 152   2                      case 4:
+ 153   2                              P24=0;P23=1;P22=1;
+ 154   2                              break;
+ 155   2                      case 3:
+ 156   2                              P24=1;P23=0;P22=0;
+ 157   2                              break;
+ 158   2                      case 2:
+ 159   2                              P24=1;P23=0;P22=1;
+ 160   2                              break;
+ 161   2                      case 1:
+ 162   2                              P24=1;P23=1;P22=0;
+ 163   2                              break;
+ 164   2                      case 0:
+ 165   2                              P24=1;P23=1;P22=1;
+ 166   2                              break;
+ 167   2                      default :return;
+ 168   2                              break;
+ 169   2              }
+ 170   1              P0=led[dat];
+ 171   1      
+ 172   1      }
+ 173          
+ 174          void serial_init_9600(bit flag)//9600bps@11.0592MHz
+ 175          {
+ 176   1              /*
+ 177   1              串口初始化函数,flag=1,打开串口中断,即接收数据
+ 178   1              */
+C51 COMPILER V9.60.7.0   DELAY                                                             06/01/2023 19:59:48 PAGE 4   
+
+ 179   1              if(flag==1)
+ 180   1              {
+ 181   2                      ES=1;                           //打开串口中断
+ 182   2                      EA=1;                           //打开总中断
+ 183   2              }
+ 184   1              SCON = 0x50;            //8位数据,可变波特率
+ 185   1              TMOD &= 0x0F;           //设置定时器模式
+ 186   1              TMOD |= 0x20;           //设置定时器模式
+ 187   1              TL1 = 0xFD;                     //设置定时初始值
+ 188   1              TH1 = 0xFD;                     //设置定时重载值
+ 189   1              ET1 = 0;                        //禁止定时器中断
+ 190   1              TR1 = 1;                        //定时器1开始计时
+ 191   1      }
+ 192          
+ 193          void serial_interrupt() interrupt 4
+ 194          {
+ 195   1              if(RI==1)
+ 196   1              {
+ 197   2                      RI=0;
+ 198   2              }
+ 199   1      }
+ 200          void serial_send_char(u8 d)
+ 201          {
+ 202   1              /*
+ 203   1              发送一个字节,可以是字符
+ 204   1              */
+ 205   1              SBUF=d;
+ 206   1              while(TI==0);
+ 207   1              TI=0;
+ 208   1      }
+ 209          
+ 210          void serial_send_string(u8* s)
+ 211          {
+ 212   1              /*
+ 213   1              发送一个字符串
+ 214   1              */
+ 215   1              while(*s!='\0')
+ 216   1              {
+ 217   2                      serial_send_char(*s);
+ 218   2                      s++;
+ 219   2              }
+ 220   1      }
+ 221          
+ 222          u16 serial_pow(u16 x,u16 y)
+ 223          {
+ 224   1              /*
+ 225   1              计算x的y次方
+ 226   1          */
+ 227   1          u16 i=0,s=1;
+ 228   1          for(i=0;i<y;i++)
+ 229   1          {
+ 230   2              s*=x;
+ 231   2          }
+ 232   1          return s;
+ 233   1      }
+ 234          
+ 235          void serial_send_int(int dat,u8 len)
+ 236          {
+ 237   1              /*
+ 238   1              发送一个整数,可以是负数,最大值32767
+ 239   1              len:数字长度,最大5
+ 240   1              */
+C51 COMPILER V9.60.7.0   DELAY                                                             06/01/2023 19:59:48 PAGE 5   
+
+ 241   1              u16 new_dat=0;
+ 242   1              u8 i;
+ 243   1              if(len>5) len=5;
+ 244   1              if(dat>=0)
+ 245   1          {
+ 246   2              new_dat=dat;
+ 247   2          }
+ 248   1          else
+ 249   1          {
+ 250   2              serial_send_char('-');
+ 251   2              new_dat=-dat;
+ 252   2          }
+ 253   1      
+ 254   1              for(i=len;i>0;i--)
+ 255   1          {
+ 256   2              serial_send_char(new_dat/serial_pow(10,i-1)%10+'0');
+ 257   2          }
+ 258   1      
+ 259   1              /*u8 i;
+ 260   1              u8 buf[5];
+ 261   1              if(len>5)
+ 262   1                      return;
+ 263   1              for(i=0;i<len;i++)
+ 264   1              {
+ 265   1                      buf[i]=dat%10;
+ 266   1                      dat/=10;
+ 267   1              }
+ 268   1              for(i=0;i<len;i++)
+ 269   1              {
+ 270   1                      serial_send_char(buf[len-i-1]+'0');
+ 271   1              }*/
+ 272   1      }
+ 273          
+ 274          
+ 275          
+ 276          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    494    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     12       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,87 @@
+C51 COMPILER V9.60.7.0   PUBLIC                                                            06/26/2023 12:59:44 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE PUBLIC
+OBJECT MODULE PLACED IN .\Objects\public.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE public.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\pu
+                    -blic.lst) OBJECT(.\Objects\public.obj)
+
+line level    source
+
+   1          #include "public.h"
+   2          
+   3          void delay_10us()
+   4          {
+   5   1          u8 i=2;
+   6   1          while(--i);
+   7   1      }
+   8          
+   9          void delay_ms_12M(u16 xms)
+  10          {
+  11   1          u16 i,j;
+  12   1              for(i=0;i<xms;i++)
+  13   1                      for(j=0;j<120;j++);
+  14   1      }
+  15          
+  16          
+  17          
+  18          void delay_ms_11M(u16 xms)
+  19          {
+  20   1          u16 i,j;
+  21   1          for(i=0;i<xms;i++)
+  22   1              for(j=0;j<110;j++);
+  23   1      }
+  24          
+  25          void delay_100us_11M(u16 xus)
+  26          {
+  27   1          u16 i,j;
+  28   1          for(i=0;i<xus;i++)
+  29   1              for(j=0;j<11;j++);
+  30   1      }
+  31          
+  32          void delay_100us_12M(u16 xus)
+  33          {
+  34   1          u16 i,j;
+  35   1          for(i=0;i<xus;i++)
+  36   1              for(j=0;j<12;j++);
+  37   1      }
+  38          
+  39          void init_timer0_5ms()//5毫秒@11.0592MHz
+  40          {
+  41   1              TMOD &= 0xF0; // 清除定时器0的工作方式
+  42   1          TMOD = 0x01; // 选择定时器0工作在方式1
+  43   1          //TH0 = 0xf8;TL0 = 0xcd;//2ms
+  44   1              //TH0 = 0xdc;TL0 = 0x00;//10ms
+  45   1              //TH0 = 0x4c;TL0 = 0x00;//50ms
+  46   1              TH0 = 0xee;TL0 = 0x00;//5ms
+  47   1          EA = 1; // 开启总中断
+  48   1          ET0 = 1; // 开启定时器0中断
+  49   1          TR0 = 1; // 开启定时器0
+  50   1      }
+  51          
+  52          void init_timer0_1ms()//5毫秒@11.0592MHz
+  53          {
+  54   1          TMOD &= 0xF0; // 清除定时器0的工作方式
+C51 COMPILER V9.60.7.0   PUBLIC                                                            06/26/2023 12:59:44 PAGE 2   
+
+  55   1          TMOD = 0x01; // 选择定时器0工作在方式1
+  56   1          TH0 = 0xfc;TL0 = 0x66;//1ms
+  57   1          EA = 1; // 开启总中断
+  58   1          ET0 = 1; // 开启定时器0中断
+  59   1          TR0 = 1; // 开启定时器0
+  60   1      }
+  61          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    171    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

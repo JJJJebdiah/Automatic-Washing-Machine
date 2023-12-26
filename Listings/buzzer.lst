@@ -1,0 +1,69 @@
+C51 COMPILER V9.60.7.0   BUZZER                                                            06/26/2023 12:59:44 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE BUZZER
+OBJECT MODULE PLACED IN .\Objects\buzzer.obj
+COMPILER INVOKED BY: E:\Keil_v5\C51\BIN\C51.EXE buzzer.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\bu
+                    -zzer.lst) OBJECT(.\Objects\buzzer.obj)
+
+line level    source
+
+   1          #include "buzzer.h"
+   2          
+   3          #define BEEP P25
+   4          
+   5          void buzzer_play_11M(u16 xms, u16 freq)
+   6          {
+   7   1          /*
+   8   1              xms:持续时间ms
+   9   1              freq:频率0-5000
+  10   1          */
+  11   1          u16 i;
+  12   1          if(freq==0||freq>5000||xms==0)
+  13   1              return;
+  14   1          for(i=0;i<xms*1000/freq;i++)
+  15   1          {
+  16   2      
+  17   2              BEEP = !BEEP;
+  18   2              delay_100us_11M(5000/freq);
+  19   2              BEEP = !BEEP;
+  20   2              delay_100us_11M(5000/freq);
+  21   2          }
+  22   1          BEEP = 0;
+  23   1      
+  24   1      }
+  25          
+  26          void buzzer_play_12M(u16 xms, u16 freq)
+  27          {
+  28   1      
+  29   1              //xms:持续时间ms
+  30   1              //freq:频率0-5000
+  31   1          u16 i;
+  32   1          if(freq==0||freq>5000||xms==0)
+  33   1              return;
+  34   1          for(i=0;i<xms*1000/freq;i++)
+  35   1          {
+  36   2              BEEP = !BEEP;
+  37   2              delay_100us_12M(5000/freq);
+  38   2              BEEP = !BEEP;
+  39   2              delay_100us_12M(5000/freq);
+  40   2          }
+  41   1          BEEP = 0;
+  42   1      
+  43   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    216    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      12
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.60.7.0   BUZZER                                                            06/26/2023 12:59:44 PAGE 2   
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
